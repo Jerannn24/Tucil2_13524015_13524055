@@ -25,7 +25,7 @@ type vertices struct {
 
 func main() {
 	if len(os.Args) < 3 {
-		fmt.Println("Usage: go run main.go <path_to_obj_file> <max_depth>")
+		fmt.Println("Usage: go run main.go octree.go <path_to_obj_file> <max_depth>")
 		return
 	}
 
@@ -35,12 +35,10 @@ func main() {
 		fmt.Println("max_depth argument has to be a number!")
 		return
 	}
-	//tambahan aja, nanti dihapus, biar ga eror
-	maxDepth = maxDepth + 0
-	//sampai sini
 
 	path := os.Args[1]
 	faces, vertices, mainBox, err := parseObj("../test/" + path)
+	
 
 	if err != nil {
 		fmt.Printf("Error parsing OBJ file: %v\n", err)
@@ -65,6 +63,31 @@ func main() {
 		fmt.Printf("\nBoundary Box Center: (%.4f, %.4f, %.4f)\n", mainBox.Center.X, mainBox.Center.Y, mainBox.Center.Z)
 		fmt.Printf("Half Box Length: %.4f\n", mainBox.Half)
 	}
+
+	octree := &Octree{}
+	octree.MaxDepth = maxDepth
+	octree.NodesCount = make([]int, maxDepth+1)
+	octree.NodesSkipped = make([]int, maxDepth+1)
+	octree.LeafList = []Boundary{}
+
+	octree.Root = octree.Build(*mainBox, faces, 0)
+
+	fmt.Println("\nOctree Construction Result : ")
+	fmt.Printf("Total Leaf created: %d\n", octree.TotalLeaf)
+	for i := 0; i <= maxDepth; i++ {
+		fmt.Printf("Depth %d: Created %d nodes, Skipped %d nodes\n", i, octree.NodesCount[i], octree.NodesSkipped[i])
+	}
+
+
+	//disini bisa atur outputnya, mau dibuat ke folder lain dll terserah
+	outputFileName := "result.obj"
+    err = octree.ExportToOBJ(outputFileName)
+
+    if err != nil {
+        fmt.Printf("Error exporting: %v\n", err)
+    } else {
+        fmt.Printf("\nExported %d voxels to %s successfully!\n", octree.TotalLeaf, outputFileName)
+    }
 
 }
 
