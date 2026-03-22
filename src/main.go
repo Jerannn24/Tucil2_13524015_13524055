@@ -22,12 +22,12 @@ type vertice struct {
 }
 
 func main() {
-	if len(os.Args) < 5 {
+	if len(os.Args) < 3 {
 		fmt.Println("Usage: go run main.go octree.go viewer.go <path_to_obj_file> <max_depth>")
 		return
 	}
 
-	max_depth := os.Args[4]
+	max_depth := os.Args[2]
 	maxDepth, err := strconv.Atoi(max_depth)
 	if err != nil {
 		fmt.Println("max_depth argument has to be a number!")
@@ -84,12 +84,21 @@ func main() {
 	fmt.Printf("Octree construction took %v seconds\n", timeEnd.Sub(timestart).Seconds())
 	fmt.Printf("Octree Max Depth: %d\n", octree.MaxDepth)
 
-	var outputPath string
+	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Printf("Masukkan path output .obj (contoh: hasil.obj atau ../output/hasil.obj): ")
-	fmt.Scanf("%s", &outputPath)
+	outputPath, err := reader.ReadString('\n')
+	if err != nil && len(outputPath) == 0 {
+		fmt.Printf("Gagal membaca input path output: %v\n", err)
+		return
+	}
 
 	outputPath = strings.TrimSpace(outputPath)
+	if outputPath == "" {
+		fmt.Println("Path output tidak boleh kosong")
+		return
+	}
+
 	if !strings.HasSuffix(strings.ToLower(outputPath), ".obj") {
 		outputPath += ".obj"
 	}
@@ -107,6 +116,12 @@ func main() {
 	}
 
 	facess, verticess, _, err := parseObj(outputPath)
+	for i := range verticess {
+		verticess[i].x -= mainBox.Center.X
+		verticess[i].y -= mainBox.Center.Y
+		verticess[i].z -= mainBox.Center.Z
+	}
+
 	if err != nil {
 		fmt.Printf("Error parsing exported OBJ file: %v\n", err)
 		return
@@ -114,9 +129,22 @@ func main() {
 
 	mesh := buildMesh(verticess, facess)
 
-	ebiten.SetWindowSize(SCREEN_WIDTH, SCREEN_HEIGHT)
-	ebiten.SetWindowTitle("3D Viewer")
-	ebiten.RunGame(&game{distance: 10, meshe: mesh})
+	fmt.Printf("Do you want to view the output? (Y/n) ")
+	input, err := reader.ReadString('\n')
+	if err != nil && len(input) == 0 {
+		fmt.Printf("Gagal membaca input viewer: %v\n", err)
+		return
+	}
+	input = strings.TrimSpace(input)
+	if input == "" {
+		input = "y"
+	}
+
+	if strings.ToLower(input) == "y" || strings.ToLower(input) == "yes" {
+		ebiten.SetWindowSize(SCREEN_WIDTH, SCREEN_HEIGHT)
+		ebiten.SetWindowTitle("3D Viewer")
+		ebiten.RunGame(&game{distance: mainBox.Half * 3, meshe: mesh})
+	}
 }
 
 func parseObj(path string) ([]face, []vertice, *Boundary, error) {
