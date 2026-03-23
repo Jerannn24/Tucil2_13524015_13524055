@@ -42,6 +42,38 @@ func main() {
 		return
 	}
 
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Printf("Enter output .obj path (example: result.obj or ../output/result.obj): ")
+	outputPath, err := reader.ReadString('\n')
+	if err != nil && len(outputPath) == 0 {
+		fmt.Printf("Failed to read output path input: %v\n", err)
+		return
+	}
+
+	outputPath = strings.TrimSpace(outputPath)
+	   if outputPath == "" {
+		   fmt.Println("Output path cannot be empty")
+		   return
+	   }
+
+
+	   if !strings.HasSuffix(strings.ToLower(outputPath), ".obj") {
+		   outputPath += ".obj"
+	   }
+
+	   if filepath.Dir(outputPath) == "." {
+		   outputPath = filepath.Join("..", "output", outputPath)
+	   }
+
+	   // Pastikan folder output ada, jika belum ada buat dan handle error
+	   outputDir := filepath.Dir(outputPath)
+	   if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
+		   fmt.Printf("Failed to create output folder '%s': %v\n", outputDir, err)
+		   return
+	   }
+
+	fmt.Printf("\nParsing Started\n")
 	fmt.Printf("Parsed %d vertices and %d faces from the OBJ file.\n", len(vertices), len(faces))
 	// for i, vertex := range vertices {
 	// 	fmt.Printf("Vertex %d: (%.2f, %.2f, %.2f)\n", i+1, vertex.x, vertex.y, vertex.z)
@@ -56,26 +88,22 @@ func main() {
 	// 	fmt.Println()
 	// }
 
-	// Print boundary box info
-	if mainBox != nil {
-		fmt.Printf("\nBoundary Box Center: (%.4f, %.4f, %.4f)\n", mainBox.Center.X, mainBox.Center.Y, mainBox.Center.Z)
-		fmt.Printf("Half Box Length: %.4f\n", mainBox.Half)
-	}
-
 	octree := &Octree{}
 	octree.MaxDepth = maxDepth
 	octree.NodesCount = make([]int, maxDepth+1)
 	octree.NodesSkipped = make([]int, maxDepth+1)
-	octree.LeafList = []Boundary{}
 
+
+	fmt.Printf("\nProcess Started\n")
 	timestart := time.Now()
-	octree.Root = octree.Build(*mainBox, faces, vertices, 0)
+	octree.Root = octree.Build(*mainBox, faces, vertices, 0, outputPath, nil, nil)
 	timeEnd := time.Now()
 
-	fmt.Println("\nOctree Construction Result : ")
+	fmt.Printf("Process Done\n")
+	fmt.Printf("Voxels exported to %s successfully!\n", outputPath)
+
+	fmt.Println("\nOctree Construction Result:")
 	fmt.Printf("Total Voxels created: %d\n", octree.TotalLeaf)
-	fmt.Printf("Total Vertex created: %d\n", len(octree.LeafList)*8)
-	fmt.Printf("Total Faces created: %d\n\n", len(octree.LeafList)*12)
 
 	for i := 0; i <= maxDepth; i++ {
 		fmt.Printf("Depth %d: Created %d nodes, Skipped %d nodes\n", i, octree.NodesCount[i], octree.NodesSkipped[i])
@@ -83,37 +111,6 @@ func main() {
 
 	fmt.Printf("Octree construction took %v seconds\n", timeEnd.Sub(timestart).Seconds())
 	fmt.Printf("Octree Max Depth: %d\n", octree.MaxDepth)
-
-	reader := bufio.NewReader(os.Stdin)
-
-	fmt.Printf("Masukkan path output .obj (contoh: hasil.obj atau ../output/hasil.obj): ")
-	outputPath, err := reader.ReadString('\n')
-	if err != nil && len(outputPath) == 0 {
-		fmt.Printf("Gagal membaca input path output: %v\n", err)
-		return
-	}
-
-	outputPath = strings.TrimSpace(outputPath)
-	if outputPath == "" {
-		fmt.Println("Path output tidak boleh kosong")
-		return
-	}
-
-	if !strings.HasSuffix(strings.ToLower(outputPath), ".obj") {
-		outputPath += ".obj"
-	}
-
-	if filepath.Dir(outputPath) == "." {
-		outputPath = filepath.Join("..", "output", outputPath)
-	}
-
-	err = octree.ExportToOBJ(outputPath)
-
-	if err != nil {
-		fmt.Printf("Error exporting: %v\n", err)
-	} else {
-		fmt.Printf("Voxels exported to %s successfully!\n", outputPath)
-	}
 
 	facess, verticess, _, err := parseObj(outputPath)
 	for i := range verticess {
@@ -132,7 +129,7 @@ func main() {
 	fmt.Printf("Do you want to view the output? (Y/n) ")
 	input, err := reader.ReadString('\n')
 	if err != nil && len(input) == 0 {
-		fmt.Printf("Gagal membaca input viewer: %v\n", err)
+		fmt.Printf("Failed to read viewer input: %v\n", err)
 		return
 	}
 	input = strings.TrimSpace(input)
