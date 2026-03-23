@@ -14,7 +14,7 @@ Program ini membaca file 3D model berformat OBJ, membangun boundary box, lalu me
 
 ### Cara Pakai
 1. **Clone repo ini**
-2. **Jalankan program**
+2. **Jalankan program dengan Go**
    ```bash
    go run src/main.go src/octree.go src/viewer.go <path_to_obj_file> <max_depth>
    ```
@@ -22,7 +22,17 @@ Program ini membaca file 3D model berformat OBJ, membangun boundary box, lalu me
    ```bash
    go run src/main.go src/octree.go src/viewer.go cow.obj 3
    ```
-3. **Ikuti instruksi di terminal**
+3. **Atau jalankan program dengan file .exe (Windows)**
+   - File executable sudah tersedia di folder `bin` dengan nama `tucil2.exe`.
+   - Jalankan langsung:
+     ```bash
+     bin/tucil2.exe <path_to_obj_file> <max_depth>
+     ```
+   Contoh:
+     ```bash
+     bin/tucil2.exe cow.obj 3
+     ```
+4. **Ikuti instruksi di terminal**
    - Masukkan path output (misal: hasil.obj atau ../output/hasil.obj)
    - Pilih apakah ingin melihat hasilnya di viewer 3D
 
