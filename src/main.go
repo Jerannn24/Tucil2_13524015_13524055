@@ -23,7 +23,7 @@ type vertice struct {
 
 func main() {
 	if len(os.Args) < 3 {
-		fmt.Println("Usage: go run main.go octree.go viewer.go <path_to_obj_file> <max_depth>")
+		fmt.Println("Usage: go run src/main.go src/octree.go src/viewer.go <path_to_obj_file> <max_depth>")
 		return
 	}
 
